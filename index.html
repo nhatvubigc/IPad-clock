@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Clock">
+<title>Living Room Clock</title>
+<style>
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; width: 100%; height: 100%; overflow: hidden;
+  background: #03060b; color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+}
+body {
+  display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: center; justify-content: center;
+}
+.screen {
+  position: relative; width: 100vw; height: 100vh;
+  padding: 5vh 5vw; overflow: hidden;
+  background:
+    radial-gradient(ellipse at 78% 48%, rgba(12,62,105,.45) 0%, rgba(3,12,25,.15) 34%, transparent 57%),
+    linear-gradient(115deg, #020407 0%, #050a12 62%, #020407 100%);
+}
+.screen:after {
+  content: ""; position: absolute; width: 52vw; height: 52vw;
+  right: -17vw; top: 10vh; border-radius: 50%;
+  border: 1px solid rgba(81,166,230,.45);
+  box-shadow: 0 0 35px rgba(0,128,255,.13), inset 18px 0 35px rgba(0,110,210,.10);
+  pointer-events: none;
+}
+.header {
+  position: relative; z-index: 1; height: 14%;
+  display: -webkit-flex; display: flex; align-items: center;
+  font-size: clamp(16px, 3vw, 30px); font-weight: 700;
+  letter-spacing: 3px; color: #f7f9fc;
+}
+.home-icon { font-size: 1.25em; margin-right: 14px; }
+.content {
+  position: relative; z-index: 1; height: 72%;
+  display: -webkit-flex; display: flex; align-items: center;
+}
+.main {
+  width: 76%; padding-right: 3vw;
+}
+.time {
+  white-space: nowrap; font-weight: 800;
+  font-size: 17vw; line-height: 1;
+  letter-spacing: -0.055em; font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 2px rgba(255,255,255,.25);
+}
+.date {
+  margin-top: 5vh; padding-top: 3vh;
+  border-top: 2px solid rgba(55,155,235,.8);
+  font-size: clamp(16px, 3.1vw, 30px);
+  font-weight: 700; letter-spacing: 1px; white-space: nowrap;
+}
+.weather {
+  width: 24%; height: 75%; min-width: 110px;
+  border-left: 2px solid rgba(190,210,230,.45);
+  display: -webkit-flex; display: flex;
+  -webkit-flex-direction: column; flex-direction: column;
+  -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: center; justify-content: center;
+  text-align: center; padding-left: 2vw;
+}
+.weather-icon { font-size: clamp(38px, 7vw, 76px); line-height: 1.2; }
+.temp { font-size: clamp(28px, 5vw, 54px); font-weight: 800; margin-top: 8px; }
+.condition { color: #c6d5e5; font-size: clamp(13px, 2.2vw, 22px); margin-top: 8px; }
+.city { color: #8198ae; font-size: clamp(10px, 1.5vw, 15px); margin-top: 18px; letter-spacing: 1px; }
+.footer {
+  position: relative; z-index: 1; height: 14%;
+  display: -webkit-flex; display: flex; align-items: flex-end;
+  justify-content: space-between; color: #6f8498;
+  font-size: clamp(10px, 1.5vw, 14px); letter-spacing: 2px;
+}
+@media (orientation: portrait) {
+  .screen { padding: 4vh 5vw; }
+  .header { height: 12%; }
+  .content { height: 76%; -webkit-flex-direction: column; flex-direction: column; justify-content: center; }
+  .main { width: 100%; padding: 0; text-align: center; }
+  .time { font-size: 16vw; }
+  .date { margin-top: 4vh; font-size: 4vw; white-space: normal; }
+  .weather { width: 85%; height: auto; min-width: 0; border-left: 0; border-top: 1px solid rgba(190,210,230,.35); margin-top: 5vh; padding: 2vh 0 0; }
+  .weather-icon { font-size: 38px; }
+  .temp { font-size: 30px; }
+  .city { margin-top: 5px; }
+  .footer { height: 12%; }
+}
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="header"><span class="home-icon">⌂</span><span>PHÒNG KHÁCH</span></div>
+  <div class="content">
+    <div class="main">
+      <div class="time" id="time">00:00</div>
+      <div class="date" id="date">THỨ HAI, 16 THÁNG 11, 2026</div>
+    </div>
+    <div class="weather">
+      <div class="weather-icon" id="weatherIcon">☁</div>
+      <div class="temp" id="temp">--°C</div>
+      <div class="condition" id="condition">Đang tải thời tiết</div>
+      <div class="city" id="city">TP. HỒ CHÍ MINH</div>
+    </div>
+  </div>
+  <div class="footer"><span>LOCAL TIME</span><span id="updated">WEATHER · --:--</span></div>
+</div>
+<script>
+/* Có thể đổi tọa độ và tên thành phố tại đây.
+   Mặc định: TP. Hồ Chí Minh */
+var LAT = 10.8231;
+var LON = 106.6297;
+var CITY = "TP. HỒ CHÍ MINH";
+
+function pad(n) { return n < 10 ? "0" + n : "" + n; }
+function updateClock() {
+  var now = new Date();
+  var days = ["CHỦ NHẬT","THỨ HAI","THỨ BA","THỨ TƯ","THỨ NĂM","THỨ SÁU","THỨ BẢY"];
+  document.getElementById("time").textContent = pad(now.getHours()) + ":" + pad(now.getMinutes());
+  document.getElementById("date").textContent =
+    days[now.getDay()] + ", " + pad(now.getDate()) +
+    " THÁNG " + (now.getMonth()+1) + ", " + now.getFullYear();
+}
+function weatherText(code) {
+  if (code === 0) return ["☀","Trời quang"];
+  if (code === 1 || code === 2) return ["🌤","Ít mây"];
+  if (code === 3) return ["☁","Nhiều mây"];
+  if (code === 45 || code === 48) return ["🌫","Sương mù"];
+  if (code >= 51 && code <= 67) return ["🌧","Mưa nhỏ"];
+  if (code >= 71 && code <= 77) return ["❄","Có tuyết"];
+  if (code >= 80 && code <= 82) return ["🌦","Mưa rào"];
+  if (code >= 95) return ["⛈","Dông"];
+  return ["☁","Nhiều mây"];
+}
+function loadWeather() {
+  var url = "https://api.open-meteo.com/v1/forecast?latitude=" +
+    LAT + "&longitude=" + LON + "&current=temperature_2m,weather_code&timezone=Asia%2FBangkok";
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", url, true);
+  xhr.timeout = 12000;
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        var current = data.current;
+        var desc = weatherText(current.weather_code);
+        document.getElementById("weatherIcon").textContent = desc[0];
+        document.getElementById("temp").textContent = Math.round(current.temperature_2m) + "°C";
+        document.getElementById("condition").textContent = desc[1];
+        document.getElementById("city").textContent = CITY;
+        var now = new Date();
+        document.getElementById("updated").textContent = "CẬP NHẬT " + pad(now.getHours()) + ":" + pad(now.getMinutes());
+      } catch(e) {
+        document.getElementById("condition").textContent = "Không đọc được dữ liệu";
+      }
+    } else if (xhr.readyState === 4) {
+      document.getElementById("condition").textContent = "Kiểm tra kết nối mạng";
+    }
+  };
+  xhr.ontimeout = function() {
+    document.getElementById("condition").textContent = "Thời tiết tạm gián đoạn";
+  };
+  xhr.send();
+}
+updateClock();
+setInterval(updateClock, 1000);
+loadWeather();
+setInterval(loadWeather, 30 * 60 * 1000);
+</script>
+</body>
+</html>
