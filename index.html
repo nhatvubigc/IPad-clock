@@ -11,7 +11,7 @@
 * { box-sizing: border-box; }
 html, body {
   margin: 0; width: 100%; min-height: 100%; overflow: hidden;
-  background: #070b12; color: #f4f7fb;
+  background: #080b18; color: #f4f7fb;
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
 }
 body {
@@ -22,16 +22,19 @@ body {
 .screen {
   position: relative; width: 100vw; height: 100vh; min-height: 320px;
   padding: 5vh 6vw; overflow: hidden;
-  background: radial-gradient(ellipse at 80% 45%, rgba(20,48,80,.30), transparent 48%),
-    linear-gradient(125deg, #080c13 0%, #0b111b 58%, #090e16 100%);
+  background:
+    radial-gradient(ellipse at 88% 16%, rgba(67,81,211,.30), transparent 39%),
+    radial-gradient(ellipse at 74% 77%, rgba(0,192,205,.16), transparent 42%),
+    radial-gradient(ellipse at 12% 88%, rgba(115,53,186,.16), transparent 38%),
+    linear-gradient(125deg, #090c1a 0%, #11152b 53%, #091621 100%);
 }
 .header {
   position: relative; z-index: 1; height: 12%;
   display: -webkit-flex; display: flex; align-items: center;
   font-size: 2.15vw; font-weight: 700;
-  letter-spacing: .19em; color: #e7edf6;
+  letter-spacing: .19em; color: #eff3ff;
 }
-.home-icon { font-size: 1.2em; margin-right: 14px; color: #68a9ec; }
+.home-icon { font-size: 1.2em; margin-right: 14px; color: #72e4f1; text-shadow: 0 0 18px rgba(66,219,240,.55); }
 .content {
   position: relative; z-index: 1; height: 74%;
   display: -webkit-flex; display: flex; align-items: center;
@@ -43,38 +46,49 @@ body {
   white-space: nowrap; font-weight: 750;
   font-size: 13.2vw; line-height: 1;
   letter-spacing: -0.045em; font-variant-numeric: tabular-nums;
-  color: #f6f8fc; text-shadow: 0 3px 24px rgba(0,0,0,.25);
+  color: #f5f8ff; text-shadow: 0 0 30px rgba(82,151,255,.20), 0 3px 24px rgba(0,0,0,.35);
 }
 .date {
   margin-top: 3.5vh; padding-top: 2.4vh;
-  border-top: 2px solid rgba(82,153,222,.72);
+  border-top: 2px solid rgba(86,204,231,.80);
   font-size: 2.25vw; line-height: 1.35;
   font-weight: 700; letter-spacing: .07em; white-space: nowrap;
-  color: #cbd6e5;
+  color: #d8e6f7;
 }
 .lunar-date {
-  margin-top: 1.5vh; color: #7fa9d4;
+  margin-top: 1.5vh; color: #8ad8ed;
   font-size: 1.65vw; line-height: 1.35;
   font-weight: 600; letter-spacing: .04em; white-space: nowrap;
 }
 .weather {
+  position: relative; overflow: hidden;
   width: 32%; height: 68%; min-width: 190px;
-  border: 1px solid rgba(130,161,195,.18); border-radius: 18px;
-  background: rgba(17,27,41,.76); box-shadow: 0 14px 36px rgba(0,0,0,.2);
+  border: 1px solid rgba(111,190,228,.36); border-radius: 20px;
+  background: linear-gradient(145deg, rgba(39,52,95,.90), rgba(16,44,63,.93) 58%, rgba(16,30,52,.96));
+  box-shadow: 0 18px 42px rgba(0,0,0,.32), 0 0 30px rgba(53,130,219,.12), inset 0 1px 0 rgba(255,255,255,.08);
   display: -webkit-flex; display: flex;
   -webkit-flex-direction: column; flex-direction: column;
   -webkit-align-items: center; align-items: center;
   -webkit-justify-content: center; justify-content: center;
   text-align: center; padding: 2vh 1.5vw;
 }
-.weather-icon { font-size: 5.5vw; line-height: 1.15; }
-.temp { font-size: 4.4vw; font-weight: 800; margin-top: 8px; }
-.condition { color: #d0dbea; font-size: 1.9vw; margin-top: 8px; }
-.city { color: #91a6bf; font-size: 1.25vw; margin-top: 18px; letter-spacing: .12em; }
+.weather:before {
+  content: ""; position: absolute; z-index: 0; left: 0; right: 0; top: 0; height: 4px;
+  background: linear-gradient(90deg, #58e1e2, #6aa8ff 52%, #bd83ff);
+}
+.weather:after {
+  content: ""; position: absolute; z-index: 0; width: 65%; height: 65%; right: -23%; top: -12%;
+  border-radius: 50%; background: rgba(81,134,255,.17); filter: blur(34px); pointer-events: none;
+}
+.weather > div { position: relative; z-index: 1; }
+.weather-icon { font-size: 5.5vw; line-height: 1.15; text-shadow: 0 0 26px rgba(102,202,255,.40); }
+.temp { font-size: 4.4vw; font-weight: 800; margin-top: 8px; color: #fff; text-shadow: 0 0 24px rgba(114,187,255,.32); }
+.condition { color: #dce8fa; font-size: 1.9vw; margin-top: 8px; }
+.city { color: #9fc3e2; font-size: 1.25vw; margin-top: 18px; letter-spacing: .12em; }
 .footer {
   position: relative; z-index: 1; height: 14%;
   display: -webkit-flex; display: flex; align-items: flex-end;
-  justify-content: space-between; color: #8193a8;
+  justify-content: space-between; color: #95a6c1;
   font-size: 1.15vw; letter-spacing: .16em;
 }
 @media (orientation: portrait) {
