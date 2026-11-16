@@ -52,6 +52,11 @@ body {
   font-weight: 700; letter-spacing: .07em; white-space: nowrap;
   color: #cbd6e5;
 }
+.lunar-date {
+  margin-top: 1.5vh; color: #7fa9d4;
+  font-size: 1.65vw; line-height: 1.35;
+  font-weight: 600; letter-spacing: .04em; white-space: nowrap;
+}
 .weather {
   width: 32%; height: 68%; min-width: 190px;
   border: 1px solid rgba(130,161,195,.18); border-radius: 18px;
@@ -79,6 +84,7 @@ body {
   .main { width: 100%; padding: 0; text-align: center; }
   .time { font-size: 16vw; }
   .date { margin-top: 3vh; font-size: 3.6vw; white-space: normal; }
+  .lunar-date { margin-top: 1.2vh; font-size: 3.1vw; white-space: normal; }
   .weather { width: 84%; height: auto; min-width: 0; margin-top: 4vh; padding: 2.4vh 4vw; }
   .weather-icon { font-size: 10vw; }
   .temp { font-size: 8vw; }
@@ -96,6 +102,7 @@ body {
     <div class="main">
       <div class="time" id="time">00:00</div>
       <div class="date" id="date">THỨ HAI, 16 THÁNG 11, 2026</div>
+      <div class="lunar-date" id="lunarDate">ÂM LỊCH · ĐANG TÍNH</div>
     </div>
     <div class="weather">
       <div class="weather-icon" id="weatherIcon">☁</div>
@@ -113,6 +120,81 @@ var LAT = 10.8231;
 var LON = 106.6297;
 var CITY = "TP. HỒ CHÍ MINH";
 
+function INT(n) { return Math.floor(n); }
+function jdFromDate(dd, mm, yy) {
+  var a = INT((14 - mm) / 12);
+  var y = yy + 4800 - a;
+  var m = mm + 12 * a - 3;
+  var jd = dd + INT((153 * m + 2) / 5) + 365 * y + INT(y / 4) - INT(y / 100) + INT(y / 400) - 32045;
+  if (jd < 2299161) jd = dd + INT((153 * m + 2) / 5) + 365 * y + INT(y / 4) - 32083;
+  return jd;
+}
+function getNewMoonDay(k, timeZone) {
+  var T = k / 1236.85, T2 = T * T, T3 = T2 * T, dr = Math.PI / 180;
+  var Jd1 = 2415020.75933 + 29.53058868 * k + 0.0001178 * T2 - 0.000000155 * T3;
+  Jd1 += 0.00033 * Math.sin((166.56 + 132.87 * T - 0.009173 * T2) * dr);
+  var M = 359.2242 + 29.10535608 * k - 0.0000333 * T2 - 0.00000347 * T3;
+  var Mpr = 306.0253 + 385.81691806 * k + 0.0107306 * T2 + 0.00001236 * T3;
+  var F = 21.2964 + 390.67050646 * k - 0.0016528 * T2 - 0.00000239 * T3;
+  var C1 = (0.1734 - 0.000393 * T) * Math.sin(M * dr) + 0.0021 * Math.sin(2 * dr * M);
+  C1 -= 0.4068 * Math.sin(Mpr * dr) - 0.0161 * Math.sin(2 * dr * Mpr) + 0.0004 * Math.sin(3 * dr * Mpr);
+  C1 += 0.0104 * Math.sin(2 * dr * F) - 0.0051 * Math.sin(dr * (M + Mpr));
+  C1 -= 0.0074 * Math.sin(dr * (M - Mpr)) - 0.0004 * Math.sin(dr * (2 * F + M));
+  C1 -= 0.0004 * Math.sin(dr * (2 * F - M)) + 0.0006 * Math.sin(dr * (2 * F + Mpr));
+  C1 += 0.0010 * Math.sin(dr * (2 * F - Mpr)) + 0.0005 * Math.sin(dr * (2 * Mpr + M));
+  var deltat = T < -11 ? 0.001 + 0.000839 * T + 0.0002261 * T2 - 0.00000845 * T3 - 0.000000081 * T * T3 : -0.000278 + 0.000265 * T + 0.000262 * T2;
+  return INT(Jd1 + C1 - deltat + 0.5 + timeZone / 24);
+}
+function getSunLongitude(jdn, timeZone) {
+  var T = (jdn - 2451545.5 - timeZone / 24) / 36525, T2 = T * T, dr = Math.PI / 180;
+  var M = 357.52910 + 35999.05030 * T - 0.0001559 * T2 - 0.00000048 * T * T2;
+  var L0 = 280.46645 + 36000.76983 * T + 0.0003032 * T2;
+  var DL = (1.914600 - 0.004817 * T - 0.000014 * T2) * Math.sin(dr * M);
+  DL += (0.019993 - 0.000101 * T) * Math.sin(2 * dr * M) + 0.000290 * Math.sin(3 * dr * M);
+  var L = (L0 + DL) * dr;
+  L -= Math.PI * 2 * INT(L / (Math.PI * 2));
+  return INT(L / Math.PI * 6);
+}
+function getLunarMonth11(yy, timeZone) {
+  var k = INT((jdFromDate(31, 12, yy) - 2415021) / 29.530588853);
+  var nm = getNewMoonDay(k, timeZone);
+  return getSunLongitude(nm, timeZone) >= 9 ? getNewMoonDay(k - 1, timeZone) : nm;
+}
+function getLeapMonthOffset(a11, timeZone) {
+  var k = INT((a11 - 2415021.076998695) / 29.530588853 + 0.5);
+  var last = 0, i = 1, arc = getSunLongitude(getNewMoonDay(k + i, timeZone), timeZone);
+  do {
+    last = arc; i++;
+    arc = getSunLongitude(getNewMoonDay(k + i, timeZone), timeZone);
+  } while (arc !== last && i < 14);
+  return i - 1;
+}
+function convertSolarToLunar(dd, mm, yy, timeZone) {
+  var dayNumber = jdFromDate(dd, mm, yy);
+  var k = INT((dayNumber - 2415021.076998695) / 29.530588853);
+  var monthStart = getNewMoonDay(k + 1, timeZone);
+  if (monthStart > dayNumber) monthStart = getNewMoonDay(k, timeZone);
+  var a11 = getLunarMonth11(yy, timeZone), b11 = a11, lunarYear;
+  if (a11 >= monthStart) { lunarYear = yy; a11 = getLunarMonth11(yy - 1, timeZone); }
+  else { lunarYear = yy + 1; b11 = getLunarMonth11(yy + 1, timeZone); }
+  var lunarDay = dayNumber - monthStart + 1;
+  var diff = INT((monthStart - a11) / 29), lunarMonth = diff + 11, lunarLeap = false;
+  if (b11 - a11 > 365) {
+    var leapMonthDiff = getLeapMonthOffset(a11, timeZone);
+    if (diff >= leapMonthDiff) { lunarMonth = diff + 10; if (diff === leapMonthDiff) lunarLeap = true; }
+  }
+  if (lunarMonth > 12) lunarMonth -= 12;
+  if (lunarMonth >= 11 && diff < 4) lunarYear--;
+  return [lunarDay, lunarMonth, lunarYear, lunarLeap];
+}
+function lunarDateText(date) {
+  var lunar = convertSolarToLunar(date.getDate(), date.getMonth() + 1, date.getFullYear(), 7);
+  var stems = ["GIÁP","ẤT","BÍNH","ĐINH","MẬU","KỶ","CANH","TÂN","NHÂM","QUÝ"];
+  var branches = ["TÝ","SỬU","DẦN","MÃO","THÌN","TỴ","NGỌ","MÙI","THÂN","DẬU","TUẤT","HỢI"];
+  var dayText = lunar[0] <= 10 ? "MÙNG " + lunar[0] : "NGÀY " + lunar[0];
+  var leapText = lunar[3] ? " NHUẬN" : "";
+  return "ÂM LỊCH · " + dayText + " THÁNG " + lunar[1] + leapText + " · NĂM " + stems[(lunar[2] + 6) % 10] + " " + branches[(lunar[2] + 8) % 12];
+}
 function pad(n) { return n < 10 ? "0" + n : "" + n; }
 function updateClock() {
   var now = new Date();
@@ -121,6 +203,7 @@ function updateClock() {
   document.getElementById("date").textContent =
     days[now.getDay()] + ", " + pad(now.getDate()) +
     " THÁNG " + (now.getMonth()+1) + ", " + now.getFullYear();
+  document.getElementById("lunarDate").textContent = lunarDateText(now);
 }
 function weatherText(code) {
   if (code === 0) return ["☀","Trời quang"];
