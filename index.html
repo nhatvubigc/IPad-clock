@@ -75,12 +75,12 @@ body {
   font-size: 1.65vw; line-height: 1.35;
   font-weight: 600; letter-spacing: .04em; white-space: nowrap;
 }
-.next-event {
-  margin-top: 2.2vh; padding: 1.1vh 1.2vw; border-left: 3px solid #ba8aff;
-  border-radius: 0 10px 10px 0; background: rgba(104,75,160,.18);
-  color: #ede2ff; font-size: 1.4vw; line-height: 1.4; font-weight: 600;
-}
-.next-label { color: #d4b5ff; font-size: .82em; letter-spacing: .12em; margin-right: .45em; }
+.upcoming-title { margin: 2.1vh 0 .7vh; color: #d4b5ff; font-size: 1.15vw; font-weight: 800; letter-spacing: .13em; }
+.upcoming-list { display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; gap: .55vh; }
+.upcoming-row { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; gap: .9vw; padding: .65vh .9vw; border-left: 2px solid rgba(165,139,221,.36); border-radius: 0 8px 8px 0; background: rgba(104,75,160,.12); color: #e6eafb; }
+.upcoming-row.is-next { border-left-color: #c28eff; background: rgba(104,75,160,.24); }
+.upcoming-time { -webkit-flex: 0 0 43%; flex: 0 0 43%; color: #b9daf1; font-size: 1.05vw; font-weight: 700; white-space: nowrap; }
+.upcoming-name { -webkit-flex: 1; flex: 1; min-width: 0; overflow: hidden; color: #f1f3ff; font-size: 1.2vw; white-space: nowrap; text-overflow: ellipsis; }
 .weather {
   position: relative; overflow: hidden;
   width: 32%; height: 68%; min-width: 190px;
@@ -167,7 +167,11 @@ body {
   .time { font-size: 16vw; }
   .date { margin-top: 3vh; font-size: 3.6vw; white-space: normal; }
   .lunar-date { margin-top: 1.2vh; font-size: 3.1vw; white-space: normal; }
-  .next-event { margin-top: 1.8vh; padding: 1vh 3vw; font-size: 3.2vw; text-align: left; }
+  .upcoming-title { margin: 1.5vh 0 .6vh; font-size: 2.7vw; }
+  .upcoming-list { gap: .5vh; }
+  .upcoming-row { padding: .65vh 2vw; gap: 2vw; }
+  .upcoming-time { -webkit-flex-basis: 43%; flex-basis: 43%; font-size: 2.45vw; }
+  .upcoming-name { font-size: 2.9vw; }
   .weather { width: 84%; height: auto; min-width: 0; margin-top: 4vh; padding: 2.4vh 4vw; }
   .weather-icon { font-size: 10vw; }
   .temp { font-size: 8vw; }
@@ -194,7 +198,8 @@ body {
       <div class="time" id="time">00:00</div>
       <div class="date" id="date">THỨ HAI, 16 THÁNG 11, 2026</div>
       <div class="lunar-date" id="lunarDate">ÂM LỊCH · ĐANG TÍNH</div>
-      <div class="next-event" id="nextEvent"><span class="next-label">HẸN TIẾP THEO</span><span id="nextEventText">Chưa có lịch hẹn</span></div>
+      <div class="upcoming-title">LỊCH HẸN SẮP TỚI</div>
+      <div class="upcoming-list" id="upcomingList"><div class="upcoming-row"><span class="upcoming-name">Chưa có lịch · nhấn Lịch tuần để thêm</span></div></div>
     </div>
     <div class="weather">
       <div class="weather-icon" id="weatherIcon">☁</div>
@@ -217,7 +222,7 @@ body {
     <div class="schedule-status" id="scheduleStatus" aria-live="polite"></div>
     <div class="schedule-list" id="scheduleList"></div>
   </section>
-  <div class="appointment-alert" id="appointmentAlert" role="alert" aria-live="assertive"><span class="appointment-alert-text" id="appointmentAlertText">ĐẾN GIỜ HẸN</span><button class="alert-dismiss" id="alertDismiss" type="button">ĐÃ XEM</button></div>
+  <div class="appointment-alert" id="appointmentAlert" role="alert" aria-live="assertive"><span class="appointment-alert-text" id="appointmentAlertText">ĐẾN GIỜ HẸN</span><button class="alert-dismiss" id="alertDismiss" type="button">TẮT CHUÔNG</button></div>
 </div>
 <script>
 /* Vị trí dự phòng khi người dùng không cấp quyền GPS. */
@@ -232,6 +237,10 @@ var editingEventId = null;
 var soundEnabled = false;
 var audioContext = null;
 var alertedToday = {};
+var alarmActive = false;
+var alarmEndAt = 0;
+var alarmRepeatTimer = null;
+var alarmEndTimer = null;
 
 function INT(n) { return Math.floor(n); }
 function jdFromDate(dd, mm, yy) {
@@ -332,22 +341,41 @@ function saveSchedule() {
 }
 function renderNextEvent(now) {
   var currentMinute = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
-  var found = null;
-  for (var offset = 0; offset < 7 && !found; offset++) {
-    var day = (now.getDay() + offset) % 7;
-    var todays = [];
-    for (var i = 0; i < weeklyEvents.length; i++) {
-      if (Number(weeklyEvents[i].day) === day) todays.push(weeklyEvents[i]);
-    }
-    todays.sort(function(a, b) { return a.time < b.time ? -1 : (a.time > b.time ? 1 : 0); });
-    for (var j = 0; j < todays.length; j++) {
-      var parts = todays[j].time.split(":");
-      var eventMinute = Number(parts[0]) * 60 + Number(parts[1]);
-      if (offset > 0 || eventMinute > currentMinute) { found = todays[j]; break; }
-    }
+  var upcoming = [];
+  for (var i = 0; i < weeklyEvents.length; i++) {
+    var item = weeklyEvents[i];
+    var parts = item.time.split(":");
+    var eventMinute = Number(parts[0]) * 60 + Number(parts[1]);
+    var dayOffset = (Number(item.day) - now.getDay() + 7) % 7;
+    var minutesUntil = dayOffset * 1440 + eventMinute - currentMinute;
+    if (minutesUntil <= 0) minutesUntil += 7 * 1440;
+    upcoming.push({ item: item, minutesUntil: minutesUntil });
   }
-  var output = found ? WEEK_DAYS[Number(found.day)] + " · " + found.time + " — " + found.title : "Chưa có lịch hẹn · nhấn Lịch tuần để thêm";
-  document.getElementById("nextEventText").textContent = output;
+  upcoming.sort(function(a, b) { return a.minutesUntil - b.minutesUntil; });
+  var list = document.getElementById("upcomingList");
+  list.innerHTML = "";
+  if (!upcoming.length) {
+    var empty = document.createElement("div");
+    empty.className = "upcoming-row";
+    empty.textContent = "Chưa có lịch · nhấn Lịch tuần để thêm";
+    list.appendChild(empty);
+    return;
+  }
+  var count = Math.min(3, upcoming.length);
+  for (var j = 0; j < count; j++) {
+    var event = upcoming[j].item;
+    var row = document.createElement("div");
+    row.className = j === 0 ? "upcoming-row is-next" : "upcoming-row";
+    var time = document.createElement("span");
+    time.className = "upcoming-time";
+    time.textContent = WEEK_DAYS[Number(event.day)] + " · " + event.time;
+    var name = document.createElement("span");
+    name.className = "upcoming-name";
+    name.textContent = event.title;
+    row.appendChild(time);
+    row.appendChild(name);
+    list.appendChild(row);
+  }
 }
 function playAppointmentChime() {
   if (!soundEnabled || !audioContext) return;
@@ -380,6 +408,7 @@ function setSoundEnabled(enabled) {
     button.classList.remove("sound-enabled");
     button.textContent = "🔔 BẬT CHUÔNG";
   }
+  if (enabled && alarmActive) ringAppointmentAlarm();
 }
 function toggleSound() {
   if (soundEnabled) {
@@ -395,16 +424,40 @@ function toggleSound() {
     if (!audioContext) audioContext = new AudioContextType();
     if (audioContext.resume) audioContext.resume();
     setSoundEnabled(true);
-    playAppointmentChime();
-    document.getElementById("scheduleStatus").textContent = "Đã bật chuông · vừa phát tiếng thử";
+    if (!alarmActive) playAppointmentChime();
+    document.getElementById("scheduleStatus").textContent = alarmActive ? "Chuông đang báo · tự tắt sau tối đa 5 phút" : "Đã bật chuông · vừa phát tiếng thử";
   } catch(e) {
     document.getElementById("scheduleStatus").textContent = "Không bật được chuông trên thiết bị này";
   }
+}
+function ringAppointmentAlarm() {
+  if (alarmRepeatTimer) { window.clearTimeout(alarmRepeatTimer); alarmRepeatTimer = null; }
+  if (!alarmActive || !soundEnabled) return;
+  if (Date.now() >= alarmEndAt) { stopAppointmentAlarm(); return; }
+  playAppointmentChime();
+  alarmRepeatTimer = window.setTimeout(ringAppointmentAlarm, 10000);
+}
+function startAppointmentAlarm() {
+  alarmActive = true;
+  alarmEndAt = Date.now() + 5 * 60 * 1000;
+  if (alarmEndTimer) window.clearTimeout(alarmEndTimer);
+  alarmEndTimer = window.setTimeout(stopAppointmentAlarm, 5 * 60 * 1000);
+  ringAppointmentAlarm();
+}
+function stopAppointmentAlarm() {
+  if (alarmRepeatTimer) window.clearTimeout(alarmRepeatTimer);
+  if (alarmEndTimer) window.clearTimeout(alarmEndTimer);
+  alarmRepeatTimer = null;
+  alarmEndTimer = null;
+  alarmActive = false;
+  alarmEndAt = 0;
+  document.querySelector(".screen").classList.remove("alert-active");
 }
 function checkAppointmentAlerts(now) {
   var day = now.getDay();
   var currentMinute = now.getHours() * 60 + now.getMinutes();
   var dateKey = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate());
+  var due = [];
   for (var i = 0; i < weeklyEvents.length; i++) {
     var item = weeklyEvents[i];
     var parts = item.time.split(":");
@@ -412,9 +465,12 @@ function checkAppointmentAlerts(now) {
     var minutesLate = currentMinute - eventMinute;
     if (Number(item.day) !== day || minutesLate < 0 || minutesLate > 2 || alertedToday[item.id] === dateKey) continue;
     alertedToday[item.id] = dateKey;
-    document.getElementById("appointmentAlertText").textContent = "ĐẾN GIỜ HẸN · " + item.title;
+    due.push(item.title);
+  }
+  if (due.length) {
+    document.getElementById("appointmentAlertText").textContent = "ĐẾN GIỜ HẸN · " + due.join(" · ");
     document.querySelector(".screen").classList.add("alert-active");
-    playAppointmentChime();
+    if (!alarmActive) startAppointmentAlarm();
   }
 }
 function renderScheduleList() {
@@ -515,7 +571,7 @@ function initializeSchedule() {
   document.getElementById("soundToggle").onclick = toggleSound;
   document.getElementById("scheduleClose").onclick = function() { setSchedulePanel(false); };
   document.getElementById("scheduleBackdrop").onclick = function() { setSchedulePanel(false); };
-  document.getElementById("alertDismiss").onclick = function() { document.querySelector(".screen").classList.remove("alert-active"); };
+  document.getElementById("alertDismiss").onclick = stopAppointmentAlarm;
   document.getElementById("scheduleCancel").onclick = cancelScheduleEdit;
   document.getElementById("scheduleForm").onsubmit = function(e) {
     e.preventDefault();
@@ -648,7 +704,12 @@ function loadWeather() {
 updateClock();
 initializeSchedule();
 setInterval(updateClock, 1000);
-document.addEventListener("visibilitychange", function() { if (!document.hidden) updateClock(); });
+document.addEventListener("visibilitychange", function() {
+  if (!document.hidden) {
+    updateClock();
+    if (alarmActive && soundEnabled) ringAppointmentAlarm();
+  }
+});
 startLocation();
 setInterval(loadWeather, 15 * 60 * 1000);
 </script>
