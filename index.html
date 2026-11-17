@@ -35,6 +35,15 @@ body {
   letter-spacing: .19em; color: #eff3ff;
 }
 .home-icon { font-size: 1.2em; margin-right: 14px; color: #72e4f1; text-shadow: 0 0 18px rgba(66,219,240,.55); }
+.schedule-toggle, .schedule-close, .schedule-submit, .schedule-cancel, .event-action {
+  color: #eef7ff; font-family: inherit; font-weight: 700; cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+}
+.schedule-toggle {
+  margin-left: auto; padding: .75em 1.05em; border: 1px solid rgba(109,202,236,.42);
+  border-radius: 999px; background: rgba(33,77,111,.55); font-size: 1.05vw;
+  letter-spacing: .10em; box-shadow: 0 0 20px rgba(58,178,222,.12);
+}
 .content {
   position: relative; z-index: 1; height: 74%;
   display: -webkit-flex; display: flex; align-items: center;
@@ -60,6 +69,12 @@ body {
   font-size: 1.65vw; line-height: 1.35;
   font-weight: 600; letter-spacing: .04em; white-space: nowrap;
 }
+.next-event {
+  margin-top: 2.2vh; padding: 1.1vh 1.2vw; border-left: 3px solid #ba8aff;
+  border-radius: 0 10px 10px 0; background: rgba(104,75,160,.18);
+  color: #ede2ff; font-size: 1.4vw; line-height: 1.4; font-weight: 600;
+}
+.next-label { color: #d4b5ff; font-size: .82em; letter-spacing: .12em; margin-right: .45em; }
 .weather {
   position: relative; overflow: hidden;
   width: 32%; height: 68%; min-width: 190px;
@@ -84,55 +99,115 @@ body {
 .weather-icon { font-size: 5.5vw; line-height: 1.15; text-shadow: 0 0 26px rgba(102,202,255,.40); }
 .temp { font-size: 4.4vw; font-weight: 800; margin-top: 8px; color: #fff; text-shadow: 0 0 24px rgba(114,187,255,.32); }
 .condition { color: #dce8fa; font-size: 1.9vw; margin-top: 8px; }
-.city { color: #9fc3e2; font-size: 1.25vw; margin-top: 18px; letter-spacing: .12em; }
+.city { color: #b5d6f1; font-size: 1.25vw; line-height: 1.45; margin-top: 18px; letter-spacing: .08em; white-space: normal; }
 .footer {
   position: relative; z-index: 1; height: 14%;
   display: -webkit-flex; display: flex; align-items: flex-end;
   justify-content: space-between; color: #95a6c1;
   font-size: 1.15vw; letter-spacing: .16em;
 }
+.credits { color: #849aba; font-size: .92em; letter-spacing: .08em; white-space: nowrap; }
+.credits a { color: inherit; text-decoration: none; }
+.schedule-backdrop { display: none; position: absolute; z-index: 8; inset: 0; background: rgba(3,6,18,.58); }
+.screen.panel-open .schedule-backdrop { display: block; }
+.schedule-panel {
+  display: none; position: absolute; z-index: 9; top: 13vh; right: 4vw;
+  width: 42vw; max-width: 520px; max-height: 76vh; overflow-y: auto;
+  -webkit-overflow-scrolling: touch; padding: 2.2vh 2vw;
+  border: 1px solid rgba(117,199,235,.38); border-radius: 18px;
+  background: linear-gradient(145deg, rgba(26,37,72,.98), rgba(12,33,50,.98));
+  box-shadow: 0 24px 70px rgba(0,0,0,.48); color: #eff5ff;
+}
+.screen.panel-open .schedule-panel { display: block; }
+.schedule-heading { display: -webkit-flex; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.8vh; }
+.schedule-heading h2 { margin: 0; font-size: 1.65vw; letter-spacing: .08em; }
+.schedule-close { width: 40px; height: 40px; border: 1px solid rgba(255,255,255,.18); border-radius: 50%; background: rgba(255,255,255,.08); font-size: 20px; }
+.schedule-form { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.schedule-field { display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; gap: 6px; color: #aec7e2; font-size: 12px; letter-spacing: .06em; }
+.schedule-field.title-field { -webkit-flex: 1 1 100%; flex: 1 1 100%; }
+.schedule-field.day-field { -webkit-flex: 1 1 45%; flex: 1 1 45%; }
+.schedule-field.time-field { -webkit-flex: 0 0 34%; flex: 0 0 34%; }
+.schedule-field input, .schedule-field select {
+  width: 100%; min-height: 42px; padding: 9px 10px; border: 1px solid rgba(141,177,220,.32);
+  border-radius: 9px; background: rgba(7,14,31,.78); color: #fff; font: 16px -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+}
+.schedule-submit, .schedule-cancel { min-height: 42px; padding: 9px 14px; border: 0; border-radius: 9px; background: linear-gradient(100deg,#298dd1,#6858d6); font-size: 13px; letter-spacing: .05em; }
+.schedule-cancel { display: none; background: rgba(255,255,255,.12); }
+.schedule-status { min-height: 20px; margin: 10px 0; color: #8edff0; font-size: 13px; }
+.schedule-list { display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; gap: 8px; }
+.schedule-empty { margin: 0; padding: 14px; border: 1px dashed rgba(151,185,222,.28); border-radius: 10px; color: #aabbd0; font-size: 14px; }
+.event-row { display: -webkit-flex; display: flex; align-items: center; gap: 8px; padding: 10px 11px; border: 1px solid rgba(142,174,218,.17); border-radius: 10px; background: rgba(255,255,255,.045); }
+.event-details { -webkit-flex: 1; flex: 1; min-width: 0; color: #ecf3ff; font-size: 14px; line-height: 1.4; word-wrap: break-word; }
+.event-day { display: block; color: #a9d9ef; font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+.event-action { min-width: 38px; min-height: 38px; padding: 5px; border: 1px solid rgba(160,189,225,.2); border-radius: 8px; background: rgba(255,255,255,.07); font-size: 12px; }
 @media (orientation: portrait) {
   .screen { padding: 3vh 7vw; }
-  .header { height: 12%; font-size: 4vw; }
+  .header { height: 12%; font-size: 3.5vw; }
+  .schedule-toggle { font-size: 2.5vw; padding: .65em .9em; }
   .content { height: 76%; -webkit-flex-direction: column; flex-direction: column; justify-content: center; }
   .main { width: 100%; padding: 0; text-align: center; }
   .time { font-size: 16vw; }
   .date { margin-top: 3vh; font-size: 3.6vw; white-space: normal; }
   .lunar-date { margin-top: 1.2vh; font-size: 3.1vw; white-space: normal; }
+  .next-event { margin-top: 1.8vh; padding: 1vh 3vw; font-size: 3.2vw; text-align: left; }
   .weather { width: 84%; height: auto; min-width: 0; margin-top: 4vh; padding: 2.4vh 4vw; }
   .weather-icon { font-size: 10vw; }
   .temp { font-size: 8vw; }
   .condition { font-size: 4vw; }
   .city { margin-top: 5px; }
-  .city, .footer { font-size: 2.6vw; }
+  .city { font-size: 2.6vw; }
+  .footer { font-size: 2.2vw; }
+  .credits { font-size: .78em; }
   .footer { height: 12%; }
+  .schedule-panel { top: 10vh; left: 5vw; right: 5vw; width: auto; max-width: none; max-height: 82vh; padding: 2vh 4vw; }
+  .schedule-heading h2 { font-size: 4.2vw; }
+  .schedule-field.day-field { -webkit-flex: 1 1 48%; flex: 1 1 48%; }
+  .schedule-field.time-field { -webkit-flex: 0 0 39%; flex: 0 0 39%; }
 }
 </style>
 </head>
 <body>
 <div class="screen">
-  <div class="header"><span class="home-icon">⌂</span><span>PHÒNG KHÁCH</span></div>
+  <div class="header"><span class="home-icon">⌂</span><span>PHÒNG KHÁCH</span><button class="schedule-toggle" id="scheduleToggle" type="button">＋ LỊCH TUẦN</button></div>
   <div class="content">
     <div class="main">
       <div class="time" id="time">00:00</div>
       <div class="date" id="date">THỨ HAI, 16 THÁNG 11, 2026</div>
       <div class="lunar-date" id="lunarDate">ÂM LỊCH · ĐANG TÍNH</div>
+      <div class="next-event" id="nextEvent"><span class="next-label">HẸN TIẾP THEO</span><span id="nextEventText">Chưa có lịch hẹn</span></div>
     </div>
     <div class="weather">
       <div class="weather-icon" id="weatherIcon">☁</div>
       <div class="temp" id="temp">--°C</div>
       <div class="condition" id="condition">Đang tải thời tiết</div>
-      <div class="city" id="city">TP. HỒ CHÍ MINH</div>
+      <div class="city" id="city">ĐANG TÌM VỊ TRÍ GPS…</div>
     </div>
   </div>
-  <div class="footer"><span>LOCAL TIME</span><span id="updated">WEATHER · --:--</span></div>
+  <div class="footer"><span>LOCAL TIME</span><span class="credits"><a href="https://open-meteo.com/" target="_blank" rel="noreferrer">OPEN-METEO</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OPENSTREETMAP</a></span><span id="updated">WEATHER · --:--</span></div>
+  <div class="schedule-backdrop" id="scheduleBackdrop"></div>
+  <section class="schedule-panel" id="schedulePanel" aria-label="Lịch hẹn lặp hàng tuần">
+    <div class="schedule-heading"><h2>LỊCH HẸN HÀNG TUẦN</h2><button class="schedule-close" id="scheduleClose" type="button" aria-label="Đóng">×</button></div>
+    <form class="schedule-form" id="scheduleForm">
+      <label class="schedule-field title-field">TÊN CUỘC HẸN<input id="eventTitle" type="text" maxlength="50" placeholder="Ví dụ: Tập thể dục" required></label>
+      <label class="schedule-field day-field">THỨ TRONG TUẦN<select id="eventDay"></select></label>
+      <label class="schedule-field time-field">GIỜ<input id="eventTime" type="time" value="09:00" required></label>
+      <button class="schedule-submit" id="scheduleSubmit" type="submit">＋ THÊM HẸN</button>
+      <button class="schedule-cancel" id="scheduleCancel" type="button">HỦY SỬA</button>
+    </form>
+    <div class="schedule-status" id="scheduleStatus" aria-live="polite"></div>
+    <div class="schedule-list" id="scheduleList"></div>
+  </section>
 </div>
 <script>
-/* Có thể đổi tọa độ và tên thành phố tại đây.
-   Mặc định: TP. Hồ Chí Minh */
+/* Vị trí dự phòng khi người dùng không cấp quyền GPS. */
 var LAT = 10.8231;
 var LON = 106.6297;
 var CITY = "TP. HỒ CHÍ MINH";
+var WEEK_DAYS = ["CHỦ NHẬT","THỨ HAI","THỨ BA","THỨ TƯ","THỨ NĂM","THỨ SÁU","THỨ BẢY"];
+var DAY_PICKER_ORDER = [1,2,3,4,5,6,0];
+var SCHEDULE_KEY = "ipad-clock-weekly-appointments-v1";
+var weeklyEvents = [];
+var editingEventId = null;
 
 function INT(n) { return Math.floor(n); }
 function jdFromDate(dd, mm, yy) {
@@ -210,14 +285,181 @@ function lunarDateText(date) {
   return "ÂM LỊCH · " + dayText + " THÁNG " + lunar[1] + leapText + " · NĂM " + stems[(lunar[2] + 6) % 10] + " " + branches[(lunar[2] + 8) % 12];
 }
 function pad(n) { return n < 10 ? "0" + n : "" + n; }
+function eventDayOrder(day) { return day === 0 ? 7 : day; }
+function loadSchedule() {
+  try {
+    var saved = localStorage.getItem(SCHEDULE_KEY);
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      if (Object.prototype.toString.call(parsed) === "[object Array]") weeklyEvents = parsed;
+    }
+  } catch(e) {
+    document.getElementById("scheduleStatus").textContent = "Không đọc được lịch đã lưu trên iPad";
+  }
+}
+function saveSchedule() {
+  try {
+    localStorage.setItem(SCHEDULE_KEY, JSON.stringify(weeklyEvents));
+    return true;
+  } catch(e) {
+    document.getElementById("scheduleStatus").textContent = "Lịch chỉ giữ đến khi đóng trang này";
+    return false;
+  }
+}
+function renderNextEvent(now) {
+  var currentMinute = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  var found = null;
+  for (var offset = 0; offset < 7 && !found; offset++) {
+    var day = (now.getDay() + offset) % 7;
+    var todays = [];
+    for (var i = 0; i < weeklyEvents.length; i++) {
+      if (Number(weeklyEvents[i].day) === day) todays.push(weeklyEvents[i]);
+    }
+    todays.sort(function(a, b) { return a.time < b.time ? -1 : (a.time > b.time ? 1 : 0); });
+    for (var j = 0; j < todays.length; j++) {
+      var parts = todays[j].time.split(":");
+      var eventMinute = Number(parts[0]) * 60 + Number(parts[1]);
+      if (offset > 0 || eventMinute > currentMinute) { found = todays[j]; break; }
+    }
+  }
+  var output = found ? WEEK_DAYS[Number(found.day)] + " · " + found.time + " — " + found.title : "Chưa có lịch hẹn · nhấn Lịch tuần để thêm";
+  document.getElementById("nextEventText").textContent = output;
+}
+function renderScheduleList() {
+  var list = document.getElementById("scheduleList");
+  list.innerHTML = "";
+  var sorted = weeklyEvents.slice(0);
+  sorted.sort(function(a, b) {
+    var dayDiff = eventDayOrder(Number(a.day)) - eventDayOrder(Number(b.day));
+    if (dayDiff) return dayDiff;
+    return a.time < b.time ? -1 : (a.time > b.time ? 1 : 0);
+  });
+  if (!sorted.length) {
+    var empty = document.createElement("p");
+    empty.className = "schedule-empty";
+    empty.textContent = "Chưa có cuộc hẹn nào. Thêm lịch lặp theo thứ ở phía trên.";
+    list.appendChild(empty);
+    return;
+  }
+  for (var i = 0; i < sorted.length; i++) {
+    var item = sorted[i];
+    var row = document.createElement("div");
+    row.className = "event-row";
+    var details = document.createElement("div");
+    details.className = "event-details";
+    var dayLabel = document.createElement("span");
+    dayLabel.className = "event-day";
+    dayLabel.textContent = WEEK_DAYS[Number(item.day)] + " · " + item.time;
+    var title = document.createElement("span");
+    title.textContent = item.title;
+    details.appendChild(dayLabel);
+    details.appendChild(title);
+    var editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "event-action";
+    editButton.textContent = "SỬA";
+    editButton.onclick = (function(id) { return function() { editScheduleItem(id); }; })(item.id);
+    var deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "event-action";
+    deleteButton.textContent = "XÓA";
+    deleteButton.onclick = (function(id, name) { return function() { deleteScheduleItem(id, name); }; })(item.id, item.title);
+    row.appendChild(details);
+    row.appendChild(editButton);
+    row.appendChild(deleteButton);
+    list.appendChild(row);
+  }
+}
+function editScheduleItem(id) {
+  for (var i = 0; i < weeklyEvents.length; i++) {
+    if (weeklyEvents[i].id === id) {
+      editingEventId = id;
+      document.getElementById("eventTitle").value = weeklyEvents[i].title;
+      document.getElementById("eventDay").value = weeklyEvents[i].day;
+      document.getElementById("eventTime").value = weeklyEvents[i].time;
+      document.getElementById("scheduleSubmit").textContent = "LƯU THAY ĐỔI";
+      document.getElementById("scheduleCancel").style.display = "inline-block";
+      document.getElementById("scheduleStatus").textContent = "Đang sửa cuộc hẹn";
+      document.getElementById("eventTitle").focus();
+      break;
+    }
+  }
+}
+function cancelScheduleEdit() {
+  editingEventId = null;
+  document.getElementById("scheduleForm").reset();
+  document.getElementById("eventTime").value = "09:00";
+  document.getElementById("scheduleSubmit").textContent = "＋ THÊM HẸN";
+  document.getElementById("scheduleCancel").style.display = "none";
+  document.getElementById("scheduleStatus").textContent = "";
+}
+function deleteScheduleItem(id, name) {
+  if (!window.confirm("Xóa lịch hẹn ‘" + name + "’ khỏi tuần này?")) return;
+  var remaining = [];
+  for (var i = 0; i < weeklyEvents.length; i++) if (weeklyEvents[i].id !== id) remaining.push(weeklyEvents[i]);
+  weeklyEvents = remaining;
+  saveSchedule();
+  renderScheduleList();
+  renderNextEvent(new Date());
+  document.getElementById("scheduleStatus").textContent = "Đã xóa cuộc hẹn";
+  if (editingEventId === id) cancelScheduleEdit();
+}
+function setSchedulePanel(open) {
+  var screen = document.querySelector(".screen");
+  if (open) screen.classList.add("panel-open");
+  else screen.classList.remove("panel-open");
+}
+function initializeSchedule() {
+  var daySelect = document.getElementById("eventDay");
+  for (var i = 0; i < DAY_PICKER_ORDER.length; i++) {
+    var option = document.createElement("option");
+    option.value = DAY_PICKER_ORDER[i];
+    option.textContent = WEEK_DAYS[DAY_PICKER_ORDER[i]];
+    daySelect.appendChild(option);
+  }
+  loadSchedule();
+  renderScheduleList();
+  document.getElementById("scheduleToggle").onclick = function() { setSchedulePanel(true); };
+  document.getElementById("scheduleClose").onclick = function() { setSchedulePanel(false); };
+  document.getElementById("scheduleBackdrop").onclick = function() { setSchedulePanel(false); };
+  document.getElementById("scheduleCancel").onclick = cancelScheduleEdit;
+  document.getElementById("scheduleForm").onsubmit = function(e) {
+    e.preventDefault();
+    var title = document.getElementById("eventTitle").value.replace(/^\s+|\s+$/g, "");
+    var day = Number(document.getElementById("eventDay").value);
+    var time = document.getElementById("eventTime").value;
+    if (!title || !time) {
+      document.getElementById("scheduleStatus").textContent = "Nhập tên cuộc hẹn và giờ trước nhé";
+      return false;
+    }
+    if (editingEventId) {
+      for (var i = 0; i < weeklyEvents.length; i++) {
+        if (weeklyEvents[i].id === editingEventId) {
+          weeklyEvents[i].title = title;
+          weeklyEvents[i].day = day;
+          weeklyEvents[i].time = time;
+          break;
+        }
+      }
+    } else {
+      weeklyEvents.push({ id: String(new Date().getTime()) + Math.random().toString(36).slice(2), title: title, day: day, time: time });
+    }
+    var saved = saveSchedule();
+    renderScheduleList();
+    renderNextEvent(new Date());
+    cancelScheduleEdit();
+    document.getElementById("scheduleStatus").textContent = saved ? "Đã lưu lịch hẹn trên iPad" : "Không lưu được lịch trên iPad này";
+    return false;
+  };
+}
 function updateClock() {
   var now = new Date();
-  var days = ["CHỦ NHẬT","THỨ HAI","THỨ BA","THỨ TƯ","THỨ NĂM","THỨ SÁU","THỨ BẢY"];
   document.getElementById("time").textContent = pad(now.getHours()) + ":" + pad(now.getMinutes());
   document.getElementById("date").textContent =
-    days[now.getDay()] + ", " + pad(now.getDate()) +
+    WEEK_DAYS[now.getDay()] + ", " + pad(now.getDate()) +
     " THÁNG " + (now.getMonth()+1) + ", " + now.getFullYear();
   document.getElementById("lunarDate").textContent = lunarDateText(now);
+  renderNextEvent(now);
 }
 function weatherText(code) {
   if (code === 0) return ["☀","Trời quang"];
@@ -229,6 +471,54 @@ function weatherText(code) {
   if (code >= 80 && code <= 82) return ["🌦","Mưa rào"];
   if (code >= 95) return ["⛈","Dông"];
   return ["☁","Nhiều mây"];
+}
+function loadLocality(lat, lon) {
+  var url = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=18&accept-language=vi&lat=" +
+    encodeURIComponent(lat) + "&lon=" + encodeURIComponent(lon);
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", url, true);
+  xhr.timeout = 12000;
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    if (xhr.status < 200 || xhr.status >= 300) {
+      document.getElementById("city").textContent = "CHƯA TRA ĐƯỢC TÊN PHƯỜNG/XÃ";
+      return;
+    }
+    try {
+      var address = JSON.parse(xhr.responseText).address || {};
+      var ward = address.ward || address.quarter || address.suburb || address.neighbourhood || address.city_district || address.village || address.town || address.hamlet;
+      var province = address.province || address.state || address.city || address.municipality || address.county;
+      var label = [];
+      if (ward) label.push("PHƯỜNG/XÃ " + ward);
+      if (province && province !== ward) label.push("TỈNH/TP " + province);
+      document.getElementById("city").textContent = label.length ? label.join(" · ") : "CHƯA CÓ TÊN PHƯỜNG/XÃ";
+    } catch(e) {
+      document.getElementById("city").textContent = "KHÔNG TRA ĐƯỢC TÊN KHU VỰC";
+    }
+  };
+  xhr.ontimeout = function() {
+    document.getElementById("city").textContent = "TRA TÊN KHU VỰC BỊ QUÁ GIỜ";
+  };
+  xhr.send();
+}
+function startLocation() {
+  if (!navigator.geolocation) {
+    document.getElementById("city").textContent = "VỊ TRÍ MẶC ĐỊNH · " + CITY;
+    document.getElementById("condition").textContent = "Thiết bị không hỗ trợ GPS";
+    loadWeather();
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(function(position) {
+    LAT = position.coords.latitude;
+    LON = position.coords.longitude;
+    document.getElementById("city").textContent = "ĐANG TRA PHƯỜNG/XÃ…";
+    loadWeather();
+    loadLocality(LAT, LON);
+  }, function() {
+    document.getElementById("city").textContent = "VỊ TRÍ MẶC ĐỊNH · " + CITY;
+    document.getElementById("condition").textContent = "Cho phép vị trí để hiện phường/xã";
+    loadWeather();
+  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 900000 });
 }
 function loadWeather() {
   var url = "https://api.open-meteo.com/v1/forecast?latitude=" +
@@ -245,7 +535,6 @@ function loadWeather() {
         document.getElementById("weatherIcon").textContent = desc[0];
         document.getElementById("temp").textContent = Math.round(current.temperature_2m) + "°C";
         document.getElementById("condition").textContent = desc[1];
-        document.getElementById("city").textContent = CITY;
         var now = new Date();
         document.getElementById("updated").textContent = "CẬP NHẬT " + pad(now.getHours()) + ":" + pad(now.getMinutes());
       } catch(e) {
@@ -261,9 +550,10 @@ function loadWeather() {
   xhr.send();
 }
 updateClock();
+initializeSchedule();
 setInterval(updateClock, 1000);
-loadWeather();
-setInterval(loadWeather, 30 * 60 * 1000);
+startLocation();
+setInterval(loadWeather, 15 * 60 * 1000);
 </script>
 </body>
 </html>
