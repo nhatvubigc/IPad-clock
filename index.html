@@ -35,15 +35,21 @@ body {
   letter-spacing: .19em; color: #eff3ff;
 }
 .home-icon { font-size: 1.2em; margin-right: 14px; color: #72e4f1; text-shadow: 0 0 18px rgba(66,219,240,.55); }
-.schedule-toggle, .schedule-close, .schedule-submit, .schedule-cancel, .event-action {
+.schedule-toggle, .sound-toggle, .schedule-close, .schedule-submit, .schedule-cancel, .event-action {
   color: #eef7ff; font-family: inherit; font-weight: 700; cursor: pointer;
   -webkit-appearance: none; appearance: none;
 }
 .schedule-toggle {
-  margin-left: auto; padding: .75em 1.05em; border: 1px solid rgba(109,202,236,.42);
+  margin-left: .8vw; padding: .75em 1.05em; border: 1px solid rgba(109,202,236,.42);
   border-radius: 999px; background: rgba(33,77,111,.55); font-size: 1.05vw;
   letter-spacing: .10em; box-shadow: 0 0 20px rgba(58,178,222,.12);
 }
+.sound-toggle {
+  margin-left: auto; padding: .75em 1.05em; border: 1px solid rgba(189,139,255,.40);
+  border-radius: 999px; background: rgba(91,61,143,.42); font-size: 1.05vw;
+  letter-spacing: .08em; white-space: nowrap;
+}
+.sound-toggle.sound-enabled { border-color: rgba(89,228,191,.58); background: rgba(28,111,94,.42); }
 .content {
   position: relative; z-index: 1; height: 74%;
   display: -webkit-flex; display: flex; align-items: center;
@@ -108,6 +114,17 @@ body {
 }
 .credits { color: #849aba; font-size: .92em; letter-spacing: .08em; white-space: nowrap; }
 .credits a { color: inherit; text-decoration: none; }
+.appointment-alert {
+  display: none; position: absolute; z-index: 12; top: 18vh; left: 50%; width: 64vw;
+  -webkit-transform: translateX(-50%); transform: translateX(-50%);
+  padding: 2vh 2vw; border: 1px solid rgba(255,203,122,.72); border-radius: 16px;
+  background: linear-gradient(110deg, rgba(130,66,56,.98), rgba(83,45,112,.98));
+  box-shadow: 0 16px 48px rgba(0,0,0,.48); color: #fff5e6;
+  -webkit-align-items: center; align-items: center; justify-content: space-between; gap: 12px;
+}
+.screen.alert-active .appointment-alert { display: -webkit-flex; display: flex; }
+.appointment-alert-text { font-size: 1.8vw; line-height: 1.4; font-weight: 800; }
+.alert-dismiss { min-height: 42px; padding: 9px 14px; border: 1px solid rgba(255,255,255,.32); border-radius: 9px; background: rgba(255,255,255,.12); color: #fff; font: 700 13px -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; cursor: pointer; }
 .schedule-backdrop { display: none; position: absolute; z-index: 8; inset: 0; background: rgba(3,6,18,.58); }
 .screen.panel-open .schedule-backdrop { display: block; }
 .schedule-panel {
@@ -144,6 +161,7 @@ body {
   .screen { padding: 3vh 7vw; }
   .header { height: 12%; font-size: 3.5vw; }
   .schedule-toggle { font-size: 2.5vw; padding: .65em .9em; }
+  .sound-toggle { font-size: 2.25vw; padding: .65em .75em; }
   .content { height: 76%; -webkit-flex-direction: column; flex-direction: column; justify-content: center; }
   .main { width: 100%; padding: 0; text-align: center; }
   .time { font-size: 16vw; }
@@ -160,6 +178,8 @@ body {
   .credits { font-size: .78em; }
   .footer { height: 12%; }
   .schedule-panel { top: 10vh; left: 5vw; right: 5vw; width: auto; max-width: none; max-height: 82vh; padding: 2vh 4vw; }
+  .appointment-alert { top: 14vh; width: 88vw; padding: 2vh 4vw; }
+  .appointment-alert-text { font-size: 4vw; }
   .schedule-heading h2 { font-size: 4.2vw; }
   .schedule-field.day-field { -webkit-flex: 1 1 48%; flex: 1 1 48%; }
   .schedule-field.time-field { -webkit-flex: 0 0 39%; flex: 0 0 39%; }
@@ -168,7 +188,7 @@ body {
 </head>
 <body>
 <div class="screen">
-  <div class="header"><span class="home-icon">⌂</span><span>PHÒNG KHÁCH</span><button class="schedule-toggle" id="scheduleToggle" type="button">＋ LỊCH TUẦN</button></div>
+  <div class="header"><span class="home-icon">⌂</span><span>PHÒNG KHÁCH</span><button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false">🔔 BẬT CHUÔNG</button><button class="schedule-toggle" id="scheduleToggle" type="button">＋ LỊCH TUẦN</button></div>
   <div class="content">
     <div class="main">
       <div class="time" id="time">00:00</div>
@@ -197,6 +217,7 @@ body {
     <div class="schedule-status" id="scheduleStatus" aria-live="polite"></div>
     <div class="schedule-list" id="scheduleList"></div>
   </section>
+  <div class="appointment-alert" id="appointmentAlert" role="alert" aria-live="assertive"><span class="appointment-alert-text" id="appointmentAlertText">ĐẾN GIỜ HẸN</span><button class="alert-dismiss" id="alertDismiss" type="button">ĐÃ XEM</button></div>
 </div>
 <script>
 /* Vị trí dự phòng khi người dùng không cấp quyền GPS. */
@@ -208,6 +229,9 @@ var DAY_PICKER_ORDER = [1,2,3,4,5,6,0];
 var SCHEDULE_KEY = "ipad-clock-weekly-appointments-v1";
 var weeklyEvents = [];
 var editingEventId = null;
+var soundEnabled = false;
+var audioContext = null;
+var alertedToday = {};
 
 function INT(n) { return Math.floor(n); }
 function jdFromDate(dd, mm, yy) {
@@ -325,6 +349,74 @@ function renderNextEvent(now) {
   var output = found ? WEEK_DAYS[Number(found.day)] + " · " + found.time + " — " + found.title : "Chưa có lịch hẹn · nhấn Lịch tuần để thêm";
   document.getElementById("nextEventText").textContent = output;
 }
+function playAppointmentChime() {
+  if (!soundEnabled || !audioContext) return;
+  if (audioContext.state === "suspended" && audioContext.resume) audioContext.resume();
+  var notes = [784, 988, 1175, 988, 1175, 1568];
+  var start = audioContext.currentTime + 0.04;
+  for (var i = 0; i < notes.length; i++) {
+    var oscillator = audioContext.createOscillator();
+    var volume = audioContext.createGain();
+    var noteStart = start + i * 0.24;
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(notes[i], noteStart);
+    volume.gain.setValueAtTime(0.0001, noteStart);
+    volume.gain.exponentialRampToValueAtTime(0.22, noteStart + 0.025);
+    volume.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.20);
+    oscillator.connect(volume);
+    volume.connect(audioContext.destination);
+    oscillator.start(noteStart);
+    oscillator.stop(noteStart + 0.21);
+  }
+}
+function setSoundEnabled(enabled) {
+  var button = document.getElementById("soundToggle");
+  soundEnabled = enabled;
+  button.setAttribute("aria-pressed", enabled ? "true" : "false");
+  if (enabled) {
+    button.classList.add("sound-enabled");
+    button.textContent = "🔔 CHUÔNG BẬT";
+  } else {
+    button.classList.remove("sound-enabled");
+    button.textContent = "🔔 BẬT CHUÔNG";
+  }
+}
+function toggleSound() {
+  if (soundEnabled) {
+    setSoundEnabled(false);
+    return;
+  }
+  var AudioContextType = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextType) {
+    document.getElementById("scheduleStatus").textContent = "Safari này không hỗ trợ chuông âm thanh";
+    return;
+  }
+  try {
+    if (!audioContext) audioContext = new AudioContextType();
+    if (audioContext.resume) audioContext.resume();
+    setSoundEnabled(true);
+    playAppointmentChime();
+    document.getElementById("scheduleStatus").textContent = "Đã bật chuông · vừa phát tiếng thử";
+  } catch(e) {
+    document.getElementById("scheduleStatus").textContent = "Không bật được chuông trên thiết bị này";
+  }
+}
+function checkAppointmentAlerts(now) {
+  var day = now.getDay();
+  var currentMinute = now.getHours() * 60 + now.getMinutes();
+  var dateKey = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate());
+  for (var i = 0; i < weeklyEvents.length; i++) {
+    var item = weeklyEvents[i];
+    var parts = item.time.split(":");
+    var eventMinute = Number(parts[0]) * 60 + Number(parts[1]);
+    var minutesLate = currentMinute - eventMinute;
+    if (Number(item.day) !== day || minutesLate < 0 || minutesLate > 2 || alertedToday[item.id] === dateKey) continue;
+    alertedToday[item.id] = dateKey;
+    document.getElementById("appointmentAlertText").textContent = "ĐẾN GIỜ HẸN · " + item.title;
+    document.querySelector(".screen").classList.add("alert-active");
+    playAppointmentChime();
+  }
+}
 function renderScheduleList() {
   var list = document.getElementById("scheduleList");
   list.innerHTML = "";
@@ -420,8 +512,10 @@ function initializeSchedule() {
   loadSchedule();
   renderScheduleList();
   document.getElementById("scheduleToggle").onclick = function() { setSchedulePanel(true); };
+  document.getElementById("soundToggle").onclick = toggleSound;
   document.getElementById("scheduleClose").onclick = function() { setSchedulePanel(false); };
   document.getElementById("scheduleBackdrop").onclick = function() { setSchedulePanel(false); };
+  document.getElementById("alertDismiss").onclick = function() { document.querySelector(".screen").classList.remove("alert-active"); };
   document.getElementById("scheduleCancel").onclick = cancelScheduleEdit;
   document.getElementById("scheduleForm").onsubmit = function(e) {
     e.preventDefault();
@@ -460,6 +554,7 @@ function updateClock() {
     " THÁNG " + (now.getMonth()+1) + ", " + now.getFullYear();
   document.getElementById("lunarDate").textContent = lunarDateText(now);
   renderNextEvent(now);
+  checkAppointmentAlerts(now);
 }
 function weatherText(code) {
   if (code === 0) return ["☀","Trời quang"];
@@ -473,7 +568,7 @@ function weatherText(code) {
   return ["☁","Nhiều mây"];
 }
 function loadLocality(lat, lon) {
-  var url = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=18&accept-language=vi&lat=" +
+  var url = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=10&accept-language=vi&lat=" +
     encodeURIComponent(lat) + "&lon=" + encodeURIComponent(lon);
   var xhr = new XMLHttpRequest();
   xhr.open("GET", url, true);
@@ -481,23 +576,24 @@ function loadLocality(lat, lon) {
   xhr.onreadystatechange = function() {
     if (xhr.readyState !== 4) return;
     if (xhr.status < 200 || xhr.status >= 300) {
-      document.getElementById("city").textContent = "CHƯA TRA ĐƯỢC TÊN PHƯỜNG/XÃ";
+      document.getElementById("city").textContent = "CHƯA TRA ĐƯỢC THÀNH PHỐ/TỈNH";
       return;
     }
     try {
       var address = JSON.parse(xhr.responseText).address || {};
-      var ward = address.ward || address.quarter || address.suburb || address.neighbourhood || address.city_district || address.village || address.town || address.hamlet;
-      var province = address.province || address.state || address.city || address.municipality || address.county;
+      var city = address.city || address.town || address.municipality;
+      var province = address.province || address.state || address.county;
       var label = [];
-      if (ward) label.push("PHƯỜNG/XÃ " + ward);
-      if (province && province !== ward) label.push("TỈNH/TP " + province);
-      document.getElementById("city").textContent = label.length ? label.join(" · ") : "CHƯA CÓ TÊN PHƯỜNG/XÃ";
+      if (city) label.push("TP. " + city);
+      if (province && (!city || province.toLowerCase() !== city.toLowerCase())) label.push("TỈNH " + province);
+      if (!label.length && address.state) label.push("TỈNH/TP " + address.state);
+      document.getElementById("city").textContent = label.length ? label.join(" · ") : "CHƯA CÓ TÊN THÀNH PHỐ/TỈNH";
     } catch(e) {
-      document.getElementById("city").textContent = "KHÔNG TRA ĐƯỢC TÊN KHU VỰC";
+      document.getElementById("city").textContent = "KHÔNG TRA ĐƯỢC THÀNH PHỐ/TỈNH";
     }
   };
   xhr.ontimeout = function() {
-    document.getElementById("city").textContent = "TRA TÊN KHU VỰC BỊ QUÁ GIỜ";
+    document.getElementById("city").textContent = "TRA THÀNH PHỐ/TỈNH BỊ QUÁ GIỜ";
   };
   xhr.send();
 }
@@ -552,6 +648,7 @@ function loadWeather() {
 updateClock();
 initializeSchedule();
 setInterval(updateClock, 1000);
+document.addEventListener("visibilitychange", function() { if (!document.hidden) updateClock(); });
 startLocation();
 setInterval(loadWeather, 15 * 60 * 1000);
 </script>
