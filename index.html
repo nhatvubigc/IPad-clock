@@ -58,10 +58,11 @@ body {
 }
 .time {
   white-space: nowrap; font-family: Georgia, "Times New Roman", serif; font-weight: 400;
-  font-size: 13.2vw; line-height: 1;
+  font-size: 14.4vw; line-height: 1;
   letter-spacing: -0.045em; font-variant-numeric: tabular-nums;
   color: #f0e9dc; text-shadow: 0 3px 24px rgba(0,0,0,.38);
 }
+.seconds { display: inline-block; margin-left: .38em; color: #bda977; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; font-size: .20em; font-weight: 600; letter-spacing: .04em; vertical-align: baseline; text-shadow: none; }
 .date {
   margin-top: 3.5vh; padding-top: 2.4vh;
   border-top: 1px solid rgba(195,167,107,.72);
@@ -163,7 +164,7 @@ body {
   .sound-toggle { font-size: 2.25vw; padding: .65em .75em; }
   .content { height: 76%; -webkit-flex-direction: column; flex-direction: column; justify-content: center; }
   .main { width: 100%; padding: 0; text-align: center; }
-  .time { font-size: 16vw; }
+  .time { font-size: 17vw; }
   .date { margin-top: 3vh; font-size: 3.6vw; white-space: normal; }
   .lunar-date { margin-top: 1.2vh; font-size: 3.1vw; white-space: normal; }
   .upcoming-title { margin: 1.5vh 0 .6vh; font-size: 2.7vw; }
@@ -194,7 +195,7 @@ body {
   <div class="header"><span class="home-icon">⌂</span><span>PHÒNG KHÁCH</span><button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false">🔔 BẬT CHUÔNG</button><button class="schedule-toggle" id="scheduleToggle" type="button">＋ LỊCH TUẦN</button></div>
   <div class="content">
     <div class="main">
-      <div class="time" id="time">00:00</div>
+      <div class="time" id="time">00:00<span class="seconds">00</span></div>
       <div class="date" id="date">THỨ HAI, 16 THÁNG 11, 2026</div>
       <div class="lunar-date" id="lunarDate">ÂM LỊCH · ĐANG TÍNH</div>
       <div class="upcoming-title">LỊCH HẸN SẮP TỚI</div>
@@ -603,7 +604,7 @@ function initializeSchedule() {
 }
 function updateClock() {
   var now = new Date();
-  document.getElementById("time").textContent = pad(now.getHours()) + ":" + pad(now.getMinutes());
+  document.getElementById("time").innerHTML = pad(now.getHours()) + ":" + pad(now.getMinutes()) + '<span class="seconds">' + pad(now.getSeconds()) + "</span>";
   document.getElementById("date").textContent =
     WEEK_DAYS[now.getDay()] + ", " + pad(now.getDate()) +
     " THÁNG " + (now.getMonth()+1) + ", " + now.getFullYear();
