@@ -681,7 +681,7 @@ function loadLocality(lat, lon) {
 }
 function startLocation() {
   if (!navigator.geolocation) {
-    document.getElementById("city").textContent = "VỊ TRÍ MẶC ĐỊNH · " + CITY;
+    document.getElementById("city").textContent = "";
     document.getElementById("condition").textContent = "Thiết bị không hỗ trợ GPS";
     loadWeather();
     return;
@@ -694,7 +694,7 @@ function startLocation() {
     loadWeather();
     loadLocality(LAT, LON);
   }, function(error) {
-    document.getElementById("city").textContent = "VỊ TRÍ MẶC ĐỊNH · " + CITY;
+    document.getElementById("city").textContent = "";
     document.getElementById("condition").textContent = error && error.code === 1 ? "Cho phép vị trí trong Cài đặt Safari" : "Chưa lấy được GPS · đang dùng vị trí mặc định";
     loadWeather();
   }, { enableHighAccuracy: false, timeout: 30000, maximumAge: 600000 });
