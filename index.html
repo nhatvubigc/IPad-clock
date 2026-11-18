@@ -81,7 +81,7 @@ body {
 .upcoming-row.is-next { border-left-color: #c3a76b; background: rgba(195,167,107,.09); }
 .upcoming-time { -webkit-flex: 0 0 43%; flex: 0 0 43%; color: #c7b88f; font-size: 1.05vw; font-weight: 700; white-space: nowrap; }
 .upcoming-name { -webkit-flex: 1; flex: 1; min-width: 0; overflow: hidden; color: #eee9df; font-size: 1.2vw; white-space: nowrap; text-overflow: ellipsis; }
-.weather {
+.weather { 
   position: relative; overflow: hidden;
   width: 32%; height: 68%; min-width: 190px;
   border: 1px solid rgba(195,167,107,.22); border-radius: 22px;
@@ -106,6 +106,10 @@ body {
 .temp { font-size: 4.4vw; font-weight: 700; margin-top: 8px; color: #f0e9dc; }
 .condition { color: #d2cdc2; font-size: 1.9vw; margin-top: 8px; }
 .city { color: #bda977; font-size: 1.25vw; line-height: 1.45; margin-top: 18px; letter-spacing: .08em; white-space: normal; }
+.forecast { display: -webkit-flex; display: flex; gap: 1.1vw; width: 100%; margin-top: 1.6vh; padding-top: 1.2vh; border-top: 1px solid rgba(195,167,107,.2); }
+.forecast-day { -webkit-flex: 1; flex: 1; min-width: 0; color: #c9c1b2; font-size: .92vw; line-height: 1.35; text-align: center; }
+.forecast-day strong { display: block; color: #d3bc82; font-size: 1.05vw; margin-bottom: .4vh; }
+.forecast-day span { display: block; }
 .footer {
   position: relative; z-index: 1; height: 14%;
   display: -webkit-flex; display: flex; align-items: flex-end;
@@ -179,6 +183,9 @@ body {
   .condition { font-size: 4vw; }
   .city { margin-top: 5px; }
   .city { font-size: 2.6vw; }
+  .forecast { width: min(100%, 460px); gap: 3vw; margin-top: 1vh; padding-top: .8vh; }
+  .forecast-day { font-size: 2.35vw; }
+  .forecast-day strong { font-size: 2.8vw; }
   .footer { font-size: 2.2vw; }
   .credits { font-size: .78em; }
   .footer { height: 12%; }
@@ -207,6 +214,7 @@ body {
       <div class="temp" id="temp">--°C</div>
       <div class="condition" id="condition">Đang tải thời tiết</div>
       <div class="city" id="city">ĐANG TÌM VỊ TRÍ GPS…</div>
+      <div class="forecast" id="forecast"><div class="forecast-day">Đang tải dự báo…</div></div>
     </div>
   </div>
   <div class="footer"><span>LOCAL TIME</span><span class="credits"><a href="https://open-meteo.com/" target="_blank" rel="noreferrer">OPEN-METEO</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OPENSTREETMAP</a></span><span id="updated">WEATHER · --:--</span></div>
@@ -625,19 +633,9 @@ function weatherText(code) {
   return ["☁","Nhiều mây"];
 }
 function loadLocality(lat, lon) {
-  var url = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=10&accept-language=vi&lat=" +
-    encodeURIComponent(lat) + "&lon=" + encodeURIComponent(lon);
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", url, true);
-  xhr.timeout = 12000;
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState !== 4) return;
-    if (xhr.status < 200 || xhr.status >= 300) {
-      document.getElementById("city").textContent = "CHƯA TRA ĐƯỢC THÀNH PHỐ/TỈNH";
-      return;
-    }
-    try {
-      var address = JSON.parse(xhr.responseText).address || {};
+  var cityEl = document.getElementById("city");
+  cityEl.textContent = "ĐANG TRA THÀNH PHỐ/TỈNH…";
+  function showLocation(address) {
       var city = address.city || address.town || address.municipality;
       var province = address.province || address.state || address.county;
       var cityName = city ? city.replace(/^Thành phố\s+/i, "") : "";
@@ -646,14 +644,39 @@ function loadLocality(lat, lon) {
       if (cityName) label.push("TP. " + cityName);
       if (provinceName && (!cityName || provinceName.toLowerCase() !== cityName.toLowerCase())) label.push("TỈNH " + provinceName);
       if (!label.length && address.state) label.push("TỈNH/TP " + address.state);
-      document.getElementById("city").textContent = label.length ? label.join(" · ") : "CHƯA CÓ TÊN THÀNH PHỐ/TỈNH";
-    } catch(e) {
-      document.getElementById("city").textContent = "KHÔNG TRA ĐƯỢC THÀNH PHỐ/TỈNH";
+      if (label.length) { cityEl.textContent = label.join(" · "); return true; }
+      return false;
+  }
+  function fallback() {
+    var backup = new XMLHttpRequest();
+    backup.open("GET", "https://photon.komoot.io/reverse?lat=" + encodeURIComponent(lat) + "&lon=" + encodeURIComponent(lon) + "&lang=vi", true);
+    backup.timeout = 15000;
+    backup.onreadystatechange = function() {
+      if (backup.readyState !== 4) return;
+      try {
+        var data = JSON.parse(backup.responseText || "{}");
+        var props = data.features && data.features[0] && data.features[0].properties || {};
+        var city = props.city || props.locality || props.name;
+        var province = props.state;
+      if (!showLocation({ city: city, province: province })) cityEl.textContent = "VỊ TRÍ GPS ĐANG DÙNG";
+      } catch(e) { cityEl.textContent = "VỊ TRÍ GPS ĐANG DÙNG"; }
     }
+    backup.ontimeout = function() { cityEl.textContent = "VỊ TRÍ GPS ĐANG DÙNG"; };
+    backup.onerror = function() { cityEl.textContent = "VỊ TRÍ GPS ĐANG DÙNG"; };
+    backup.send();
+  }
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", "https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=10&accept-language=vi&lat=" + encodeURIComponent(lat) + "&lon=" + encodeURIComponent(lon), true);
+  xhr.timeout = 10000;
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    try {
+      var address = JSON.parse(xhr.responseText || "{}").address || {};
+      if (xhr.status < 200 || xhr.status >= 300 || !showLocation(address)) fallback();
+    } catch(e) { fallback(); }
   };
-  xhr.ontimeout = function() {
-    document.getElementById("city").textContent = "TRA THÀNH PHỐ/TỈNH BỊ QUÁ GIỜ";
-  };
+  xhr.ontimeout = fallback;
+  xhr.onerror = fallback;
   xhr.send();
 }
 function startLocation() {
@@ -663,21 +686,22 @@ function startLocation() {
     loadWeather();
     return;
   }
+  document.getElementById("city").textContent = "ĐANG XÁC ĐỊNH VỊ TRÍ…";
   navigator.geolocation.getCurrentPosition(function(position) {
     LAT = position.coords.latitude;
     LON = position.coords.longitude;
     document.getElementById("city").textContent = "ĐANG TRA PHƯỜNG/XÃ…";
     loadWeather();
     loadLocality(LAT, LON);
-  }, function() {
+  }, function(error) {
     document.getElementById("city").textContent = "VỊ TRÍ MẶC ĐỊNH · " + CITY;
-    document.getElementById("condition").textContent = "Cho phép vị trí để hiện phường/xã";
+    document.getElementById("condition").textContent = error && error.code === 1 ? "Cho phép vị trí trong Cài đặt Safari" : "Chưa lấy được GPS · đang dùng vị trí mặc định";
     loadWeather();
-  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 900000 });
+  }, { enableHighAccuracy: false, timeout: 30000, maximumAge: 600000 });
 }
 function loadWeather() {
   var url = "https://api.open-meteo.com/v1/forecast?latitude=" +
-    LAT + "&longitude=" + LON + "&current=temperature_2m,weather_code&timezone=Asia%2FBangkok";
+    LAT + "&longitude=" + LON + "&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=4&timezone=Asia%2FBangkok";
   var xhr = new XMLHttpRequest();
   xhr.open("GET", url, true);
   xhr.timeout = 12000;
@@ -690,6 +714,15 @@ function loadWeather() {
         document.getElementById("weatherIcon").textContent = desc[0];
         document.getElementById("temp").textContent = Math.round(current.temperature_2m) + "°C";
         document.getElementById("condition").textContent = desc[1];
+        var forecast = document.getElementById("forecast");
+        var names = ["HÔM NAY", "NGÀY MAI", "NGÀY KIA"];
+        forecast.innerHTML = "";
+        for (var i = 1; i <= 3; i++) {
+          var day = document.createElement("div"); day.className = "forecast-day";
+          var dayDesc = weatherText(data.daily.weather_code[i]);
+          day.innerHTML = "<strong>" + names[i - 1] + "</strong><span>" + dayDesc[0] + " " + dayDesc[1] + "</span><span>" + Math.round(data.daily.temperature_2m_max[i]) + "° / " + Math.round(data.daily.temperature_2m_min[i]) + "°</span>";
+          forecast.appendChild(day);
+        }
         var now = new Date();
         document.getElementById("updated").textContent = "CẬP NHẬT " + pad(now.getHours()) + ":" + pad(now.getMinutes());
       } catch(e) {
