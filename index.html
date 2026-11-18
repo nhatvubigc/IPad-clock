@@ -658,11 +658,11 @@ function loadLocality(lat, lon) {
         var props = data.features && data.features[0] && data.features[0].properties || {};
         var city = props.city || props.locality || props.name;
         var province = props.state;
-      if (!showLocation({ city: city, province: province })) cityEl.textContent = "VỊ TRÍ GPS ĐANG DÙNG";
-      } catch(e) { cityEl.textContent = "VỊ TRÍ GPS ĐANG DÙNG"; }
+      if (!showLocation({ city: city, province: province })) cityEl.textContent = "";
+      } catch(e) { cityEl.textContent = ""; }
     }
-    backup.ontimeout = function() { cityEl.textContent = "VỊ TRÍ GPS ĐANG DÙNG"; };
-    backup.onerror = function() { cityEl.textContent = "VỊ TRÍ GPS ĐANG DÙNG"; };
+    backup.ontimeout = function() { cityEl.textContent = ""; };
+    backup.onerror = function() { cityEl.textContent = ""; };
     backup.send();
   }
   var xhr = new XMLHttpRequest();
