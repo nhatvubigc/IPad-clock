@@ -794,3 +794,13 @@ setInterval(loadWeather, 15 * 60 * 1000);
   render(); window.setInterval(render,60000);
 })();
 </script>
+
+<style id="weekly-cards-style">
+.upcoming-title{margin:2.1vh 0 .75vh;color:#d8bf82}
+.upcoming-list{min-height:3.5vh;padding:.65vh .7vw;border:1px solid rgba(201,180,125,.30);border-left:3px solid #c9b47d;border-radius:9px;background:rgba(201,180,125,.055);box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
+.special-title{margin:1.2vh 0 .65vh;padding-top:1.15vh;border-top:1px solid rgba(159,185,220,.30);color:#a9c3e6}
+.special-list{min-height:3.5vh;padding:.55vh .7vw;border:1px solid rgba(118,156,211,.32);border-left:3px solid #769cd3;border-radius:9px;background:rgba(78,112,165,.10);box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+.special-row{padding:.45vh .5vw;border-left:0;border-radius:0;background:transparent}
+.special-empty{padding:.4vh .5vw}
+@media(orientation:portrait){.upcoming-list,.special-list{padding:.65vh 1.5vw}.special-title{margin-top:1vh;padding-top:.8vh}.special-row{padding:.45vh 1vw}}
+</style>
