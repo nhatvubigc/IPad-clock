@@ -777,3 +777,20 @@ setInterval(loadWeather, 15 * 60 * 1000);
 </html>
 
 
+
+<script>
+(function () {
+  var style = document.createElement('style');
+  style.textContent = '.special-title{margin:1.45vh 0 .55vh;color:#9fb9dc;font-size:.98vw;font-weight:700;letter-spacing:.14em}.special-list{display:flex;flex-direction:column;gap:.38vh}.special-row{display:flex;align-items:center;gap:.75vw;padding:.45vh .8vw;border-left:2px solid rgba(118,156,211,.55);border-radius:0 7px 7px 0;background:rgba(78,112,165,.075);color:#dce5f2;font-size:.96vw;line-height:1.2}.special-date{flex:0 0 30%;color:#c9b47d;font-weight:700;white-space:nowrap}.special-empty{color:#9ca8b8;font-size:.92vw;padding:.4vh .8vw}@media(orientation:portrait){.special-title{margin:1vh 0 .45vh;font-size:2.35vw}.special-list{gap:.35vh}.special-row{gap:2vw;padding:.5vh 2vw;font-size:2.45vw}.special-date{flex-basis:31%}.special-empty{font-size:2.35vw;padding:.35vh 2vw}}';
+  document.head.appendChild(style);
+  var heading = document.createElement('div'); heading.className = 'special-title'; heading.textContent = 'NGÀY LỄ & ĐẶC BIỆT TUẦN NÀY';
+  var list = document.createElement('div'); list.className = 'special-list'; list.id = 'specialList'; list.setAttribute('aria-live','polite');
+  var upcoming = document.getElementById('upcomingList');
+  upcoming.parentNode.insertBefore(heading, upcoming.nextSibling); upcoming.parentNode.insertBefore(list, heading.nextSibling);
+  var fixed = {'01-01':'Tết Dương lịch','02-14':'Ngày Valentine','03-08':'Quốc tế Phụ nữ','04-30':'Ngày Giải phóng miền Nam','05-01':'Quốc tế Lao động','05-19':'Ngày sinh Chủ tịch Hồ Chí Minh','06-01':'Ngày Quốc tế Thiếu nhi','06-28':'Ngày Gia đình Việt Nam','07-27':'Ngày Thương binh - Liệt sĩ','08-19':'Ngày Cách mạng Tháng Tám','09-02':'Quốc khánh Việt Nam','10-20':'Ngày Phụ nữ Việt Nam','11-20':'Ngày Nhà giáo Việt Nam','12-22':'Ngày thành lập Quân đội Nhân dân','12-24':'Đêm Giáng sinh','12-25':'Lễ Giáng sinh'};
+  var lunarNames = {'1-1':'Tết Nguyên Đán','1-15':'Tết Nguyên Tiêu (Rằm tháng Giêng)','3-10':'Giỗ Tổ Hùng Vương','4-15':'Lễ Phật Đản (Rằm tháng Tư)','7-15':'Lễ Vu Lan (Rằm tháng Bảy)','8-15':'Tết Trung Thu','12-23':'Ông Công, Ông Táo'};
+  function pad2(n){return n<10?'0'+n:''+n}
+  function render(){var now=new Date(), monday=new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7)), found=[]; for(var i=0;i<7;i++){var d=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+i), key=pad2(d.getMonth()+1)+'-'+pad2(d.getDate()), names=[]; if(fixed[key]) names.push(fixed[key]); var lunar=convertSolarToLunar(d.getDate(),d.getMonth()+1,d.getFullYear(),7), lunarKey=lunar[1]+'-'+lunar[0]; if(lunarNames[lunarKey]) names.push(lunarNames[lunarKey]); if(names.length) found.push({date:d,name:names.join(' · ')})} list.innerHTML=''; if(!found.length){var empty=document.createElement('div'); empty.className='special-empty'; empty.textContent='Tuần này chưa có ngày lễ đặc biệt'; list.appendChild(empty); return} for(var j=0;j<found.length&&j<2;j++){var row=document.createElement('div'); row.className='special-row'; var date=document.createElement('span'); date.className='special-date'; date.textContent=['CHỦ NHẬT','THỨ HAI','THỨ BA','THỨ TƯ','THỨ NĂM','THỨ SÁU','THỨ BẢY'][found[j].date.getDay()]+' · '+pad2(found[j].date.getDate())+'/'+pad2(found[j].date.getMonth()+1); var name=document.createElement('span'); name.textContent=found[j].name; row.appendChild(date); row.appendChild(name); list.appendChild(row)}}
+  render(); window.setInterval(render,60000);
+})();
+</script>
