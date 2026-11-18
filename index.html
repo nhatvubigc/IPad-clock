@@ -400,7 +400,7 @@ function playAppointmentChime() {
     oscillator.type = "sine";
     oscillator.frequency.setValueAtTime(notes[i], noteStart);
     volume.gain.setValueAtTime(0.0001, noteStart);
-    volume.gain.exponentialRampToValueAtTime(0.22, noteStart + 0.025);
+    volume.gain.exponentialRampToValueAtTime(0.66, noteStart + 0.025);
     volume.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.20);
     oscillator.connect(volume);
     volume.connect(audioContext.destination);
@@ -775,4 +775,5 @@ setInterval(loadWeather, 15 * 60 * 1000);
 </script>
 </body>
 </html>
+
 
